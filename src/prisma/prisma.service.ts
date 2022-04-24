@@ -1,15 +1,18 @@
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaClient } from '@prisma/client';
 
+// You have to use "@Injectable()" annotation to make sure you do allow dependency Injection
 @Injectable()
 export class PrismaService extends PrismaClient {
-  constructor() {
+  constructor(config: ConfigService) {
     super({
       datasources: {
         db: {
-          url: 'postgresql://postgres:123@localhost:5434/nest?schema=public',
+          url: config.get('DATABASE_URL'),
         },
       },
     });
+    console.log(config.get('DATABASE_URL'));
   }
 }
