@@ -1,13 +1,63 @@
-import { Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { AuthDto } from './dto';
+import * as argon from 'argon2';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
 //By using the "Injectable", we make sure that it uses the Dependency Injection
 @Injectable()
 export class AuthService {
   constructor(private prisma: PrismaService) {}
-  signup() {
-    return { msg: 'I have signed up.' };
+  async signup(dto: AuthDto) {
+    // Generate the password hash
+    const hash = await argon.hash(dto.password);
+    //Save the new user in the db
+    try {
+      const user = await this.prisma.user.create({
+        data: {
+          email: dto.email,
+          hash,
+        },
+        //through select we only return what we want to return, in this case we are avoiding the hash
+        // select: {
+        //   id: true,
+        //   email: true,
+        //   createdAt: true,
+        // },
+      });
+
+      delete user.hash;
+      //return the save user
+      return user;
+    } catch (error) {
+      if (error instanceof PrismaClientKnownRequestError) {
+        // There are eror codes in Prisma like "P2002".
+        if (error.code === 'P2002') {
+          throw new ForbiddenException('Credentials taken');
+        }
+      }
+      throw error;
+    }
   }
-  signin() {
-    return { msg: 'I have signed in.' };
+  async signin(dto: AuthDto) {
+    // find the user by email
+    const user = await this.prisma.user.findUnique({
+      where: {
+        email: dto.email,
+      },
+    });
+    //if user does not exist throw exception
+    if (!user) {
+      throw new ForbiddenException('Credentials incorrect');
+    }
+    //compare password
+    const pwMatches = await argon.verify(user.hash, dto.password);
+    //if password incorrect throw exception
+    if (!pwMatches) {
+      throw new ForbiddenException('Credentials incorrect');
+    }
+
+    delete user.hash;
+
+    return user;
   }
 }
