@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-
+import { User, Bookmark } from '@prisma/client';
 //By using the "Injectable", we make sure that it uses the Dependency Injection
 @Injectable({})
 export class AuthService {
