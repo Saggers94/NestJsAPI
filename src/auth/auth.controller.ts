@@ -1,4 +1,11 @@
-import { Body, Controller, ParseIntPipe, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  HttpCode,
+  HttpStatus,
+  ParseIntPipe,
+  Post,
+} from '@nestjs/common';
 // import { Request } from 'express';
 import { AuthService } from './auth.service';
 import { AuthDto } from './dto';
@@ -41,6 +48,7 @@ export class AuthController {
 
   // Using Pipes for validation is very verbose because of which there's one more cleaner way to have
   // the validation on the data with 'class-validator' and
+  // @HttpCode(HttpStatus.OK)
   @Post('signup')
   signup(@Body() dto: AuthDto) {
     console.log({
@@ -49,6 +57,7 @@ export class AuthController {
     return this.authService.signup(dto);
   }
 
+  @HttpCode(HttpStatus.OK)
   @Post('signin')
   signin(@Body() dto: AuthDto) {
     return this.authService.signin(dto);
